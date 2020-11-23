@@ -147,7 +147,7 @@ def displayresult(orderedcountedlist):
 
 
 def writecsv(sortedlist):
-    with open("TrumpMostUsedWords.csv", "w") as output:
+    with open("TrumpMostUsedWords.csv", "w", newline='') as output:
         csv_output = csv.writer(output)
         csv_output.writerow(['Word', 'Occurrence'])
         for row in sortedlist:
