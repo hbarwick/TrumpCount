@@ -1,4 +1,4 @@
-#!python3
+#!C:\Users\halla\PycharmProjects\untitled\venv\Scripts\python.exe
 # TrumpQuoteWordCounter.py - Downloads transcripts of Donald Trump speeches and counts the occurrence of each word used.
 
 import requests
@@ -27,7 +27,8 @@ def getmostusedwords():
 def getlinks():
     """Loops through all pages of quotes and returns a list of all relevant links"""
     link_list = []
-    for page in range(1, 35):    # Reduce this range to limit number of pages downloaded to speed up collection
+    logging.info("Getting links")
+    for page in range(1, 2):    # Reduce this range to limit number of pages downloaded to speed up collection
         url = r"https://www.rev.com/blog/transcript-category/donald-trump-transcripts/page/" + str(page) + "?view=all"
         try:
             pagehtml = downloadhtml(url)
@@ -54,12 +55,17 @@ def downloadhtml(url):
 
 
 def parsetranscipt(url):
-    """Connects to url and downloads html, splits out any quotes by Donald Trump. Returns string."""
+    """Connects to url and downloads html, uses regex to split the text into 3 groups for Name, Time & Quote. Returns list."""
     soup = downloadhtml(url)
     transcript = soup.find("div", "fl-callout-text").text
     regex = re.compile(r"(\w+\s\w+.)\s(.\d\d.\d\d.\d?\d?.?)\s(.+)")  # Regex splits out 3 groups: Name, Time, Quote
     split_transcript = regex.findall(transcript)
     logging.debug(f"Split data: {split_transcript}")
+    return split_transcript
+
+
+def splitquotes(split_transcript):
+    """Takes regex findall list produced by parsetranscript and splits out the text on Trumps quotes. Returns string"""
     trumps_quotes = ""
     for item in split_transcript:
         if (item[0]) == "President Trump:" or 'Donald Trump:' or "President Donald Trump:":
@@ -147,21 +153,26 @@ def displayresult(orderedcountedlist):
 
 
 def writecsv(sortedlist):
-    with open("TrumpMostUsedWords.csv", "w", newline='') as output:
-        csv_output = csv.writer(output)
-        csv_output.writerow(['Word', 'Occurrence'])
-        for row in sortedlist:
-            csv_output.writerow(row)
+    try:
+        with open("TrumpMostUsedWords.csv", "w", newline='') as output:
+            csv_output = csv.writer(output)
+            csv_output.writerow(['Word', 'Occurrence'])
+            for row in sortedlist:
+                csv_output.writerow(row)
+    except PermissionError:
+        input("Could not write to 'TrumpMostUsedWords.csv'. Ensure file is closed, then press enter to try again.")
+        writecsv(sortedlist)
 
 
 logging.info("Start of program")
-logging.info("Getting links")
+
 
 download = askyesno("Do you need to download new data? Y/N: ")
 if download:
     for link in getlinks():
         try:
-            trump_quotes = parsetranscipt(link)
+            all_quotes = parsetranscipt(link)
+            trump_quotes = splitquotes(all_quotes)
             writefile(trump_quotes)
         except requests.exceptions.RequestException:
             logging.error("ERROR - Download failed")
